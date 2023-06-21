@@ -68,6 +68,7 @@ def main():
     db_client.execute_script(sql_script)
 
     #initial data read
+    print("initial data read")
     bar_data = pd.read_csv("data/bar_data.csv")
     bar_data['glass_type'] = bar_data['glass_type'].replace('coper mug','copper mug') #this was an input error I noticed
     london = pd.read_csv("data/london_transactions.csv.gz", compression="gzip", sep=r"\t", names=['datetime','drink','price'], index_col=0)
@@ -82,12 +83,14 @@ def main():
     ny['BarID'] = 3
 
     #Creating glasses dim table
+    print("Creating glasses dim table")
     glasses = bar_data.groupby("glass_type").max().reset_index()
     glasses['ID'] = glasses.index
     glasses.rename(columns = {'ID': 'GlassID', 'glass_type': 'GlassName'}, inplace=True)
     db_client.insert_df(glasses[['GlassID','GlassName']], "glasses_dim")
 
     #creating drinks table
+    print("creating drinks table")
     all_drinks = pd.DataFrame(set(london['drink'].unique()) | set(budapest['drink'].unique()) | set(ny['drink'].unique()), columns=["DrinkName"])
     all_drinks['DrinkID'] = all_drinks.index
     all_drinks["Glass"] = all_drinks.apply(lambda row: return_glass(cocktail_client, row['DrinkName']), axis=1)
@@ -96,10 +99,12 @@ def main():
     db_client.insert_df(drinks_glass[['DrinkID','DrinkName','GlassID']], "drinks_dim")
 
     #creating bar dim table
+    print("creating bar dim table")
     bars = pd.DataFrame({"BarID": [1,2,3],"BarName": ["london","budapest","new york"]})
     db_client.insert_df(bars, "bar_dim")
 
     #creating price table
+    print("creating price table")
     london_price = london[['drink','price','BarID']].groupby("drink").first()
     london_price.reset_index(inplace=True)
 
@@ -115,17 +120,20 @@ def main():
     db_client.insert_df(prices_drinks[['DrinkID', 'BarID','price']],"prices")
 
     #creating sales table
+    print("creating sales table")
     sales_frames = [london, budapest, ny]
     all_sales = pd.concat(sales_frames)
     sales_drinks = pd.merge(all_sales, all_drinks, left_on='drink', right_on='DrinkName')
     db_client.insert_df(sales_drinks[['datetime','BarID','DrinkID']], "sales")
 
     #creating stock table
+    print("creating stock table")
     bar_stock = pd.merge(bar_data, bars, left_on='bar', right_on='BarName')
     bar_glasses_stock = pd.merge(bar_stock, glasses[['GlassName','GlassID']], left_on="glass_type", right_on='GlassName')
     db_client.insert_df(bar_glasses_stock[['BarID','GlassID','stock']], "stock")
 
     #Creating PoC table
+    print("Creating PoC table")
     poc_filename = "poc_tables.SQL"
     with open(poc_filename , 'r') as sql_file:
         sql_script = sql_file.read()
