@@ -78,8 +78,9 @@ def main():
 
     db_client.build_tables(sql_script)
 
+    #initial data read
     bar_data = pd.read_csv("data/bar_data.csv")
-    bar_data['glass_type'] = bar_data['glass_type'].replace('coper mug','copper mug')
+    bar_data['glass_type'] = bar_data['glass_type'].replace('coper mug','copper mug') #this was an input error I noticed
     london = pd.read_csv("data/london_transactions.csv.gz", compression="gzip", sep=r"\t", names=['datetime','drink','price'], index_col=0)
     budapest = pd.read_csv("data/budapest.csv.gz", compression="gzip",names=['datetime','drink','price'], index_col=0, header=0)
     ny = pd.read_csv("data/ny.csv.gz", compression="gzip",names=['datetime','drink','price'], index_col=0, header=0)
