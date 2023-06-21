@@ -136,5 +136,13 @@ def main():
     bar_glasses_stock = pd.merge(bar_stock, glasses[['GlassName','GlassID']], left_on="glass_type", right_on='GlassName')
     db_client.insert_df(bar_glasses_stock[['BarID','GlassID','stock']], "stock")
 
+    #Creating PoC table
+    con = sqlite3.connect("bars.db")
+    poc_filename = "poc_tables.SQL"
+    with open(poc_filename , 'r') as sql_file:
+        sql_script = sql_file.read()
+
+    db_client.build_tables(sql_script)
+
 if __name__ == "__main__":
     main()

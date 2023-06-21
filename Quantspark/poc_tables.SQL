@@ -40,3 +40,5 @@ RIGHT JOIN glasses_dim d on c.GlassID = d.GlassID
 RIGHT JOIN stock e on d.GlassID = e.GlassID and e.BarID = b.BarID
 Where BarName = 'new york'
 GROUP BY date, GlassName;
+
+--PoC Tables above are supposed to show when glass usage for a day passes the glass stock or the bar.
