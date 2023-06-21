@@ -17,7 +17,7 @@ class SQLClient():
     ):
         con = sqlite3.connect(self.database)
         cur = con.cursor()
-        cur.execute(script)
+        cur.executescript(script)
         cur.close()
         con.close()
         return(f"Script ran on {self.database}: {script}")
@@ -64,51 +64,6 @@ class CocktailClient(APIClient):
         time.sleep(1)
         return(self.get(url,params))
 
-def create_tables(db_client: SQLClient):
-    glasses_dim ="""CREATE TABLE glasses_dim (
-        GlassID int NOT NULL PRIMARY KEY,
-        GlassName varchar(255) NOT NULL
-    )"""
-    drinks_dim = """CREATE TABLE drinks_dim (
-        DrinkID int NOT NULL PRIMARY KEY,
-        DrinkName varchar(255) NOT NULL,
-        GlassID int NOT NULL,
-        FOREIGN KEY (GlassID) REFERENCES glasses_dim(GlassID)
-    )"""
-    bar_dim ="""CREATE TABLE bar_dim (
-        BarID int NOT NULL PRIMARY KEY,
-        BarName varchar(255) NOT NULL
-    )"""
-    price_table = """CREATE TABLE prices (
-        DrinkID int NOT NULL,
-        BarID int NOT NULL,
-        Price real NOT NULL,
-        FOREIGN KEY (DrinkID) REFERENCES drinks_dim(DrinkID),
-        FOREIGN KEY (BarID) REFERENCES bar_dim(BarID)
-        CONSTRAINT PK_prices PRIMARY KEY (BarID,DrinkID)
-    )"""
-    sales_table ="""CREATE TABLE sales (
-        Time real NOT NULL ,
-        DrinkID int NOT NULL,
-        BarID int NOT NULL,
-        FOREIGN KEY (DrinkID) REFERENCES drinks_dim(DrinkID),
-        FOREIGN KEY (BarID) REFERENCES bar_dim(BarID)
-    )"""
-    stock_table = """CREATE TABLE stock (
-        BarID int NOT NULL,
-        GlassID int NOT NULL,
-        Stock int NOT NULL,
-        FOREIGN KEY (BarID) REFERENCES bar_dim(BarID),
-        FOREIGN KEY (GlassID) REFERENCES glasses_dim(GlassID)
-        CONSTRAINT PK_stock PRIMARY KEY (BarID,GlassID)
-    )"""
-
-    db_client.build_tables(glasses_dim)
-    db_client.build_tables(drinks_dim)
-    db_client.build_tables(bar_dim)
-    db_client.build_tables(price_table)
-    db_client.build_tables(sales_table)
-    db_client.build_tables(stock_table)
 
 def return_glass(cocktail_client, drink_name):
     res = cocktail_client.get_info_for_cocktail_name(drink_name).json()
@@ -117,7 +72,11 @@ def return_glass(cocktail_client, drink_name):
 def main():
     cocktail_client = CocktailClient()
     db_client = SQLClient(database="bars.db")
-    create_tables(db_client=db_client)
+    create_script = "data_tables.SQL"
+    with open(create_script , 'r') as sql_file:
+        sql_script = sql_file.read()
+
+    db_client.build_tables(sql_script)
 
     bar_data = pd.read_csv("data/bar_data.csv")
     bar_data['glass_type'] = bar_data['glass_type'].replace('coper mug','copper mug')
