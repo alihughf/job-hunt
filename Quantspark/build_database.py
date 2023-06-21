@@ -28,7 +28,7 @@ class SQLClient():
             table_name
     ):
         con = sqlite3.connect(self.database)
-        df.to_sql(table_name, con, if_exists='append')
+        df.to_sql(table_name, con, if_exists='append', index=False)
         return(None)
 
     def send_query(
