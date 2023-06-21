@@ -22,7 +22,7 @@ class SQLClient():
         cur.execute(script)
         cur.close()
         con.close()
-        return(f"Script ran on bars.db: {script}")
+        return(f"Script ran on {self.database}: {script}")
     
     def insert_df(
             self,
@@ -59,6 +59,9 @@ class CocktailClient(APIClient):
         params = {"f": letter}
         return(self.get(url,params))
 
+def create_tables(db_client):
+    d
 
-
-
+def main():
+    cocktail_client = CocktailClient()
+    db_client = SQLClient(database="bars.db")
