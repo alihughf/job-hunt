@@ -135,3 +135,5 @@ def main():
     bar_glasses_stock = pd.merge(bar_stock, glasses[['GlassName','GlassID']], left_on="glass_type", right_on='GlassName')
     db_client.insert_df(bar_glasses_stock[['BarID','GlassID','stock']], "stock")
 
+if __name__ == "__main__":
+    main()
