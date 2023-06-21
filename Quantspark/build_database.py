@@ -55,11 +55,13 @@ class CocktailClient(APIClient):
     def list_all_cocktails(self, letter):
         url = f"http://www.thecocktaildb.com/api/json/v1/1/search.php?"
         params = {"f": letter}
+        time.sleep(1)
         return(self.get(url,params))
     
     def get_info_for_cocktail_name(self, cocktail_name):
         url = "http://www.thecocktaildb.com/api/json/v1/1/search.php?"
         params = {"s": cocktail_name}
+        time.sleep(1)
         return(self.get(url,params))
 
 def create_tables(db_client: SQLClient):
@@ -110,7 +112,6 @@ def create_tables(db_client: SQLClient):
 
 def return_glass(cocktail_client, drink_name):
     res = cocktail_client.get_info_for_cocktail_name(drink_name).json()
-    time.sleep(5)
     return (res['drinks'][0]['strGlass'])
 
 def main():
@@ -125,34 +126,53 @@ def main():
     ny = pd.read_csv("data/ny.csv.gz", compression="gzip",names=['datetime','drink','price'], index_col=0, header=0)
 
     london['datetime'] = london['datetime'].apply(pd.to_datetime)
+    london['BarID'] = 1
     budapest['datetime'] = budapest['datetime'].apply(pd.to_datetime)
+    budapest['BarID'] = 2
     ny['datetime'] = ny['datetime'].apply(pd.to_datetime)
-
-    #creating drinks table
-    all_drinks = pd.DataFrame(set(london['drink'].unique()) | set(budapest['drink'].unique()) | set(ny['drink'].unique()), columns=["DrinkName"])
-    all_drinks['DrinkID'] = all_drinks.index
-    all_drinks["Glass"] = all_drinks.apply(lambda row: return_glass(cocktail_client, row['DrinkName']), axis=1)
+    ny['BarID'] = 3
 
     #Creating glasses dim table
     glasses = bar_data.groupby("glass_type").max().reset_index()
     glasses['ID'] = glasses.index
     glasses.rename(columns = {'ID': 'GlassID', 'glass_type': 'GlassName'}, inplace=True)
-    db_client.insert_df(glasses['GlassID','GlassName'], "glasses_dim")
+    db_client.insert_df(glasses[['GlassID','GlassName']], "glasses_dim")
+
+    #creating drinks table
+    all_drinks = pd.DataFrame(set(london['drink'].unique()) | set(budapest['drink'].unique()) | set(ny['drink'].unique()), columns=["DrinkName"])
+    all_drinks['DrinkID'] = all_drinks.index
+    all_drinks["Glass"] = all_drinks.apply(lambda row: return_glass(cocktail_client, row['DrinkName']), axis=1)
+    all_drinks['Glass'] = all_drinks['Glass'].apply(lambda row: row.lower())
+    drinks_glass = pd.merge(all_drinks, glasses[['GlassID','GlassName']], left_on='Glass', right_on='GlassName')
+    db_client.insert_df(drinks_glass[['DrinkID','DrinkName','GlassID']])
 
     #creating bar dim table
     bars = pd.DataFrame({"BarID": [1,2,3],"BarName": ["london","budapest","new york"]})
     db_client.insert_df(bars, "bar_dim")
 
     #creating price table
-    london_price = london[['drink','price']].groupby("drink").first()
-    london_price['BarID'] = 1
-    london_price.rename()
+    london_price = london[['drink','price','BarID']].groupby("drink").first()
+    london_price.reset_index(inplace=True)
 
-    budapest_price = budapest[['drink','price']].groupby("drink").first()
-    budapest_price['BarID'] = 2
+    budapest_price = budapest[['drink','price','BarID']].groupby("drink").first()
+    budapest_price.reset_index(inplace= True)
 
-    ny_price = ny[['drink','price']].groupby("drink").first()
-    ny_price['BarID'] = 3
+    ny_price = ny[['drink','price','BarID']].groupby("drink").first()
+    ny_price.reset_index(inplace=True)
 
+    price_frames = [london_price, budapest_price, ny_price]
+    all_prices = pd.concat(price_frames)
+    prices_drinks = pd.merge(all_prices, all_drinks, left_on="drink", right_on = "DrinkName")
+    db_client.insert_df(prices_drinks[['DrinkID', 'BarID','price']],"prices")
 
+    #creating sales table
+    sales_frames = [london, budapest, ny]
+    all_sales = pd.concat(sales_frames)
+    sales_drinks = pd.merge(all_sales, all_drinks, left_on='drink', right_on='DrinkName')
+    db_client.insert_df(sales_drinks[['datetime','BarID','DrinkID']])
+
+    #creating stock table
+    bar_stock = pd.merge(bar_data, bars, left_on='bar', right_on='BarName')
+    bar_glasses_stock = pd.merge(bar_stock, glasses[['GlassName','GlassID']], left_on="glass_type", right_on='GlassName')
+    db_client.insert_df(bar_glasses_stock[['BarID','GlassID','stock']], "stock")
 
