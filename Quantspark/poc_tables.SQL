@@ -1,44 +1,50 @@
 -- This is where you will write the SQL to create the tables needed by the bar staff to assist on restocking decisions
-SELECT date(a.datetime) date,
-    MAX(b.BarName),
+DROP TABLE IF EXISTS overStockLondon;
+
+CREATE TABLE overStockLondon AS
+SELECT date(a.datetime) AS date,
+    b.BarName,
     d.GlassName,
-    MAX(e.Stock),
-    COUNT(d.GlassName)
-INTO overStockLondon
+    MAX(e.Stock) AS maxStock,
+    COUNT(d.GlassName) AS glassCount
 FROM sales a
-RIGHT JOIN bar_dim b on a.BarID = b.BarID
-RIGHT JOIN drinks_dim c on a.DrinkID = c.DrinkID
-RIGHT JOIN glasses_dim d on c.GlassID = d.GlassID
-RIGHT JOIN stock e on d.GlassID = e.GlassID and e.BarID = b.BarID
+JOIN bar_dim b ON a.BarID = b.BarID
+JOIN drinks_dim c ON a.DrinkID = c.DrinkID
+JOIN glasses_dim d ON c.GlassID = d.GlassID
+JOIN stock e ON d.GlassID = e.GlassID AND e.BarID = b.BarID
 WHERE BarName = 'london'
-GROUP BY date, GlassName;
+GROUP BY date, d.GlassName;
 
-SELECT date(a.datetime) date,
-    MAX(b.BarName),
+DROP TABLE IF EXISTS overStockBudapest;
+
+CREATE TABLE overStockBudapest AS
+SELECT date(a.datetime) AS date,
+    b.BarName,
     d.GlassName,
-    MAX(e.Stock),
-    COUNT(d.GlassName)
-INTO overStockBudapest
+    MAX(e.Stock) AS maxStock,
+    COUNT(d.GlassName) AS glassCount
 FROM sales a
-RIGHT JOIN bar_dim b on a.BarID = b.BarID
-RIGHT JOIN drinks_dim c on a.DrinkID = c.DrinkID
-RIGHT JOIN glasses_dim d on c.GlassID = d.GlassID
-RIGHT JOIN stock e on d.GlassID = e.GlassID and e.BarID = b.BarID
+JOIN bar_dim b ON a.BarID = b.BarID
+JOIN drinks_dim c ON a.DrinkID = c.DrinkID
+JOIN glasses_dim d ON c.GlassID = d.GlassID
+JOIN stock e ON d.GlassID = e.GlassID AND e.BarID = b.BarID
 Where BarName = 'budapest'
-GROUP BY date, GlassName;
+GROUP BY date, d.GlassName;
 
-SELECT date(a.datetime) date,
-    MAX(b.BarName),
+DROP TABLE IF EXISTS overStockNY;
+
+CREATE TABLE overStockNY AS
+SELECT date(a.datetime) AS date,
+    b.BarName,
     d.GlassName,
-    MAX(e.Stock),
-    COUNT(d.GlassName)
-INTO overStockNY
-FROM sales a 
-RIGHT JOIN bar_dim b on a.BarID = b.BarID
-RIGHT JOIN drinks_dim c on a.DrinkID = c.DrinkID
-RIGHT JOIN glasses_dim d on c.GlassID = d.GlassID
-RIGHT JOIN stock e on d.GlassID = e.GlassID and e.BarID = b.BarID
+    MAX(e.Stock) AS maxStock,
+    COUNT(d.GlassName) AS glassCount
+FROM sales a
+JOIN bar_dim b ON a.BarID = b.BarID
+JOIN drinks_dim c ON a.DrinkID = c.DrinkID
+JOIN glasses_dim d ON c.GlassID = d.GlassID
+JOIN stock e ON d.GlassID = e.GlassID AND e.BarID = b.BarID
 Where BarName = 'new york'
-GROUP BY date, GlassName;
+GROUP BY date, d.GlassName;
 
 --PoC Tables above are supposed to show when glass usage for a day passes the glass stock or the bar.

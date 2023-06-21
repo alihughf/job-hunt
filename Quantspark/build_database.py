@@ -11,7 +11,7 @@ class SQLClient():
     ):
         self.database = database
 
-    def build_tables(
+    def execute_script(
             self,
             script
     ):
@@ -30,17 +30,6 @@ class SQLClient():
         con = sqlite3.connect(self.database)
         df.to_sql(table_name, con, if_exists='append', index=False)
         return(None)
-
-    def send_query(
-            self,
-            query
-    ):
-        con = sqlite3.connect(self.database)
-        cur = con.cursor()
-        res = cur.execute(query)
-        cur.close()
-        con.close()
-        return(res.fetchall())
     
     def query_to_df(
             self,
@@ -76,7 +65,7 @@ def main():
     with open(create_script , 'r') as sql_file:
         sql_script = sql_file.read()
 
-    db_client.build_tables(sql_script)
+    db_client.execute_script(sql_script)
 
     #initial data read
     bar_data = pd.read_csv("data/bar_data.csv")
@@ -137,12 +126,11 @@ def main():
     db_client.insert_df(bar_glasses_stock[['BarID','GlassID','stock']], "stock")
 
     #Creating PoC table
-    con = sqlite3.connect("bars.db")
     poc_filename = "poc_tables.SQL"
     with open(poc_filename , 'r') as sql_file:
         sql_script = sql_file.read()
 
-    db_client.build_tables(sql_script)
+    db_client.execute_script(sql_script)
 
 if __name__ == "__main__":
     main()
