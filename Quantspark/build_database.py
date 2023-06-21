@@ -103,7 +103,7 @@ def main():
     all_drinks["Glass"] = all_drinks.apply(lambda row: return_glass(cocktail_client, row['DrinkName']), axis=1)
     all_drinks['Glass'] = all_drinks['Glass'].apply(lambda row: row.lower())
     drinks_glass = pd.merge(all_drinks, glasses[['GlassID','GlassName']], left_on='Glass', right_on='GlassName')
-    db_client.insert_df(drinks_glass[['DrinkID','DrinkName','GlassID']])
+    db_client.insert_df(drinks_glass[['DrinkID','DrinkName','GlassID']], "drinks_dim")
 
     #creating bar dim table
     bars = pd.DataFrame({"BarID": [1,2,3],"BarName": ["london","budapest","new york"]})
@@ -128,7 +128,7 @@ def main():
     sales_frames = [london, budapest, ny]
     all_sales = pd.concat(sales_frames)
     sales_drinks = pd.merge(all_sales, all_drinks, left_on='drink', right_on='DrinkName')
-    db_client.insert_df(sales_drinks[['datetime','BarID','DrinkID']])
+    db_client.insert_df(sales_drinks[['datetime','BarID','DrinkID']], "sales")
 
     #creating stock table
     bar_stock = pd.merge(bar_data, bars, left_on='bar', right_on='BarName')

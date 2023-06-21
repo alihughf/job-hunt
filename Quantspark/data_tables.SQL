@@ -34,7 +34,7 @@ CREATE TABLE prices(
     );
 
 CREATE TABLE sales(
-        Time real NOT NULL ,
+        [Time] real NOT NULL ,
         DrinkID int NOT NULL,
         BarID int NOT NULL,
         FOREIGN KEY (DrinkID) REFERENCES drinks_dim(DrinkID),
