@@ -142,3 +142,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+"""With more time I would have taken more care around data quality and had time to make more PoC tables, maybe with more data from the API"""
