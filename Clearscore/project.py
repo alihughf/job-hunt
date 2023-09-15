@@ -45,8 +45,7 @@ def read_reports_data(file_paths):
     return reports_df
 
 def calculate_average_credit_score(reports_df):
-    average_credit_score = reports_df['report.ScoreBlock.Delphi.Score'].mean()
-
+    average_credit_score = reports_df['Delphi.Score'].astype(int).mean()
     return average_credit_score
 
 def count_users_by_employment_status(accounts_df):
@@ -55,15 +54,16 @@ def count_users_by_employment_status(accounts_df):
     return employment_status_counts
 
 def count_users_in_score_ranges(reports_df):
-    reports_df['latest_score'] = reports_df['report.ScoreBlock.Delphi'].apply(lambda x: int(x[0]['Score']))
-    sorted_reports_df = reports_df.sort_values(by='latest_score')
+    
+    sorted_reports_df = reports_df.sort_values(by='Delphi.Score')
+    sorted_reports_df['Delphi.Score'] = sorted_reports_df['Delphi.Score'].astype(int)
 
     # Define the score bins and labels
-    score_bins = range(0, max(reports_df['latest_score']), 50)
+    score_bins = range(0, max(sorted_reports_df['Delphi.Score']), 50)
     score_labels = [f"{score_bins[i]} - {score_bins[i+1]}" for i in range(len(score_bins)-1)]
-    sorted_reports_df = reports_df.sort_values(by='latest_score')
+    sorted_reports_df = sorted_reports_df.sort_values(by='Delphi.Score')
     # Use pd.cut() to categorize the scores into bins
-    sorted_reports_df['score_range'] = pd.cut(sorted_reports_df['latest_score'], bins=score_bins, labels=score_labels, right=False)
+    sorted_reports_df['score_range'] = pd.cut(sorted_reports_df['Delphi.Score'], bins=score_bins, labels=score_labels, right=False)
 
     # Group by the score range and count rows in each group
     score_counts = sorted_reports_df.groupby('score_range').size().reset_index(name='count')
@@ -105,7 +105,8 @@ if __name__ == "__main__":
     enriched_bank_df = enrich_bank_data(accounts_data, most_recent_df)
 
     # Output results to CSV files
-    average_credit_score.to_csv('average_credit_score.csv', index=False, header=['Average Credit Score'])
+    average_output = pd.DataFrame({1:{"average_credit_score": average_credit_score}})
+    average_output.to_csv('average_credit_score.csv', index=False, header=['Average Credit Score'])
     employment_status_counts.reset_index().to_csv('employment_status_counts.csv', index=False, header=['Employment Status', 'Count'])
-    score_range_counts.reset_index().to_csv('score_range_counts.csv', index=False, header=['Score Range', 'Count'])
+    score_range_counts.to_csv('score_range_counts.csv', index=False, header=['Score Range', 'Count'])
     enriched_bank_df.to_csv('enriched_bank_data.csv', index=False)
